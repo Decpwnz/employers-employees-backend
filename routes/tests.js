@@ -1,4 +1,5 @@
 const express = require('express');
+
 const Test = require('../models/Test');
 
 const router = express.Router();
@@ -33,9 +34,9 @@ router.get('/:id', async (req, res) => {
     if (!test) {
       return res.status(404).send('Test not found');
     }
-    res.status(200).json(test);
+    return res.status(200).json(test);
   } catch (err) {
-    res.status(404).json({ message: err });
+    return res.status(404).json({ message: err });
   }
 });
 
@@ -45,9 +46,9 @@ router.delete('/:id', async (req, res) => {
     if (!test) {
       return res.status(404).send('Test not found');
     }
-    res.status(204).send();
+    return res.status(204).send();
   } catch (err) {
-    res.json({ message: err });
+    return res.json({ message: err });
   }
 });
 
@@ -63,9 +64,9 @@ router.patch('/:id', async (req, res) => {
     if (!test) {
       return res.status(404).send('Test not found');
     }
-    res.status(200).json({ messsage: `Succesfully updated: ${req.params.id}` });
+    return res.status(200).json({ messsage: `Succesfully updated: ${req.params.id}` });
   } catch (err) {
-    res.status(500).json({ message: err });
+    return res.status(500).json({ message: err });
   }
 });
 
@@ -77,9 +78,9 @@ router.put('/:id', async (req, res) => {
     if (!test) {
       return res.status(404).send('Test not found');
     }
-    res.status(200).json({ messsage: `Succesfully updated: ${req.params.id}` });
+    return res.status(200).json({ messsage: `Succesfully updated: ${req.params.id}` });
   } catch (err) {
-    res.status(500).json({ message: err });
+    return res.status(500).json({ message: err });
   }
 });
 
