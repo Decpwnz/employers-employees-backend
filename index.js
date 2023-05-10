@@ -1,15 +1,18 @@
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const express = require('express');
 const mongoose = require('mongoose');
 const winston = require('winston');
 
 const testsRoute = require('./routes/tests');
+const seedDatabase = require('./scripts/seed');
 
 require('dotenv/config');
 
 const app = express();
 
 app.use(bodyParser.json());
+app.use(cors());
 app.use('/testDB', testsRoute);
 
 const logger = winston.createLogger({
@@ -26,8 +29,11 @@ const logger = winston.createLogger({
 
 mongoose
   .connect(process.env.DB_CONNECTION_STRING)
-  .then(() => logger.info('Connected to MongoDB'))
+  .then(() => {
+    logger.info('Connected to MongoDB');
+    seedDatabase();
+  })
   .catch((error) => logger.error('Error connecting to MongoDB', error));
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => logger.info(`Server is runnig on port ${PORT}`));
