@@ -1,6 +1,6 @@
 const winston = require('winston');
 
-const Test = require('../models/Test');
+const { Employee, Employer } = require('../models/Test');
 
 const logger = winston.createLogger({
   level: 'info',
@@ -14,18 +14,29 @@ const logger = winston.createLogger({
   ],
 });
 
-const testSeedData = [
-  { name: 'John Doe', age: 1, description: 'password1' },
-  { name: 'Jane Smith', age: 2, description: 'password2' },
-  { name: 'Bob Johnson', age: 3, description: 'password3' },
+const employeeSeedData = [
+  {
+    type: 'Employee', name: 'Sandra Affleck', salary: 343, workplaceNumber: 2, lunchTime: 11,
+  },
+];
+const employerSeedData = [
+  {
+    type: 'Employer', name: 'Melanie Orange', salary: 777, availableHours: { start: 12, end: 18 },
+  },
 ];
 
 const seedDatabase = async () => {
   try {
-    await Test.deleteMany({})
+    await Promise.all([
+      Employee.deleteMany({}),
+      Employer.deleteMany({}),
+    ])
       .then(() => logger.info('Deleting database data'));
 
-    await Test.insertMany(testSeedData);
+    await Promise.all([
+      Employee.insertMany(employeeSeedData),
+      Employer.insertMany(employerSeedData),
+    ]);
 
     logger.info('Database populated with initial data.');
   } catch (error) {

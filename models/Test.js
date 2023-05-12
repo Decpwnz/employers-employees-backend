@@ -1,22 +1,54 @@
 const mongoose = require('mongoose');
 
-const TestSchema = mongoose.Schema({
+const EmployeeSchema = mongoose.Schema({
+  type: {
+    type: String,
+    required: true,
+  },
   name: {
     type: String,
     required: true,
   },
-  age: {
-    type: String,
+  salary: {
+    type: Number,
     required: true,
   },
-  description: {
-    type: String,
+  workplaceNumber: {
+    type: Number,
     required: true,
   },
-  date: {
-    type: Date,
-    default: Date.now,
+  lunchTime: {
+    type: Number,
+    required: true,
   },
 });
 
-module.exports = mongoose.model('Test', TestSchema);
+const EmployerSchema = mongoose.Schema({
+  type: {
+    type: String,
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  salary: {
+    type: Number,
+    required: true,
+  },
+  availableHours: {
+    type: {
+      start: Number,
+      end: Number,
+    },
+    required: true,
+  },
+});
+
+const Employee = mongoose.model('Employee', EmployeeSchema);
+const Employer = mongoose.model('Employer', EmployerSchema);
+
+module.exports = {
+  Employee,
+  Employer,
+};
