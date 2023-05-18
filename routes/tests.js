@@ -1,16 +1,17 @@
 const express = require('express');
 
-const { Employee, Employer } = require('../models/Test');
+const { User, Employee, Employer } = require('../models/Test');
 
 const router = express.Router();
 
+const MemberType = {
+  Employee: 'Employee',
+  Employer: 'Employer',
+};
+
 router.get('/', async (req, res) => {
   try {
-    const [employees, employers] = await Promise.all([
-      Employee.find(),
-      Employer.find(),
-    ]);
-    const users = [...employees, ...employers];
+    const users = await User.find().populate('employee employer');
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -19,29 +20,41 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    let newRecord;
+    const {
+      type, name, salary, workplaceNumber, lunchTime, availableHours,
+    } = req.body;
 
-    if (req.body.type === 'Employee') {
-      newRecord = new Employee({
-        type: req.body.type,
-        name: req.body.name,
-        salary: req.body.salary,
-        workplaceNumber: req.body.workplaceNumber,
-        lunchTime: req.body.lunchTime,
+    let newUser;
+    let newEmployee;
+    let newEmployer;
+
+    if (type === MemberType.Employee) {
+      newEmployee = new Employee({ workplaceNumber, lunchTime });
+
+      newUser = new User({
+        type, name, salary, employee: newEmployee.id,
       });
+
+      const savedEmployee = await newEmployee.save();
+      newUser.employee = savedEmployee.id;
     }
 
-    if (req.body.type === 'Employer') {
-      newRecord = new Employer({
-        type: req.body.type,
-        name: req.body.name,
-        salary: req.body.salary,
-        availableHours: req.body.availableHours,
+    if (type === MemberType.Employer) {
+      const { start, end } = availableHours;
+      newEmployer = new Employer({
+        availableHours: { start, end },
       });
+
+      newUser = new User({
+        type, name, salary, employer: newEmployer.id,
+      });
+
+      const savedEmployer = await newEmployer.save();
+      newUser.employer = savedEmployer.id;
     }
 
-    const savedRecords = await newRecord.save();
-    res.status(201).json(savedRecords);
+    const savedUser = await newUser.save();
+    res.status(201).json(savedUser);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -50,12 +63,12 @@ router.post('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const test = await Employee.findById(id)
-    || await Employer.findById(id);
-    if (!test) {
-      return res.status(404).send('Employee or Employer not found');
+
+    const user = await User.findById(id).populate('employee employer');
+    if (!user) {
+      return res.status(404).send('User not found');
     }
-    return res.status(200).json(test);
+    return res.status(200).json(user);
   } catch (err) {
     return res.status(404).json({ message: err.message });
   }
@@ -64,10 +77,10 @@ router.get('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const test = await Employee.findByIdAndDelete(id)
-    || await Employer.findByIdAndDelete(id);
-    if (!test) {
-      return res.status(404).send('Employee or Employer not found');
+
+    const user = await User.findByIdAndDelete(id);
+    if (!user) {
+      return res.status(404).send('User not found');
     }
     return res.status(204).send();
   } catch (err) {
@@ -77,32 +90,51 @@ router.delete('/:id', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   try {
-    let newRecord;
+    const { id } = req.params;
+    const {
+      type, name, salary, lunchTime, workplaceNumber, availableHours,
+    } = req.body;
 
-    if (req.body.type === 'Employee') {
-      newRecord = await Employee.findByIdAndUpdate(req.params.id, {
-        type: req.body.type,
-        name: req.body.name,
-        salary: req.body.salary,
-        workplaceNumber: req.body.workplaceNumber,
-        lunchTime: req.body.lunchTime,
-      });
+    let updatedUser;
+    let updatedEmployee;
+    let updatedEmployer;
+
+    if (type === MemberType.Employee) {
+      updatedUser = await User.findByIdAndUpdate(
+        id,
+        { type, name, salary },
+        { new: true },
+      );
+
+      updatedEmployee = await Employee.findByIdAndUpdate(
+        updatedUser.employee,
+        { lunchTime, workplaceNumber },
+        { new: true },
+      );
+    } else if (type === MemberType.Employer) {
+      updatedUser = await User.findByIdAndUpdate(
+        id,
+        { type, name, salary },
+        { new: true },
+      );
+
+      updatedEmployer = await Employer.findByIdAndUpdate(
+        updatedUser.employer,
+        { availableHours },
+        { new: true },
+      );
     }
 
-    if (req.body.type === 'Employer') {
-      newRecord = await Employer.findByIdAndUpdate(req.params.id, {
-        $set: {
-          type: req.body.type,
-          name: req.body.name,
-          salary: req.body.salary,
-          availableHours: req.body.availableHours,
-        },
-      });
-    }
-    if (!newRecord) {
+    if (!updatedUser) {
       return res.status(404).send('Employee or Employer not found');
     }
-    return res.status(200).json({ messsage: `Succesfully updated: ${req.params.id}` });
+
+    return res.status(200).json({
+      message: `Successfully updated: ${id}`,
+      user: updatedUser,
+      employee: updatedEmployee,
+      employer: updatedEmployer,
+    });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -110,23 +142,40 @@ router.patch('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    let newRecord;
+    const { id } = req.params;
+    const { type } = req.body;
 
-    if (req.body.type === 'Employee') {
-      newRecord = await Employee.findByIdAndUpdate(req.params.id, req.body, {
+    let updatedUser;
+    let updatedEmployee;
+    let updatedEmployer;
+
+    if (type === MemberType.Employee) {
+      updatedUser = await User.findByIdAndUpdate(id, req.body, {
+        new: true,
+      });
+      updatedEmployee = await Employee.findByIdAndUpdate(updatedUser.employee, req.body, {
         new: true,
       });
     }
 
-    if (req.body.type === 'Employer') {
-      newRecord = await Employer.findByIdAndUpdate(req.params.id, req.body, {
+    if (type === MemberType.Employer) {
+      updatedUser = await User.findByIdAndUpdate(id, req.body, {
+        new: true,
+      });
+      updatedEmployer = await Employer.findByIdAndUpdate(updatedUser.employer, req.body, {
         new: true,
       });
     }
-    if (!newRecord) {
+
+    if (!updatedUser) {
       return res.status(404).send('Employer or Employee not found');
     }
-    return res.status(200).json({ messsage: `Succesfully updated: ${req.params.id}` });
+    return res.status(200).json({
+      messsage: `Succesfully updated: ${id}`,
+      user: updatedUser,
+      employee: updatedEmployee,
+      employer: updatedEmployer,
+    });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
