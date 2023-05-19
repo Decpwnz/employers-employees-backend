@@ -1,6 +1,6 @@
 const winston = require('winston');
 
-const { User, Employee, Employer } = require('../models/Test');
+const { User, Employee, Employer } = require('../models/User');
 
 const logger = winston.createLogger({
   level: 'info',
