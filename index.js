@@ -4,7 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const winston = require('winston');
 
-const testsRoute = require('./routes/tests');
+const testsRoute = require('./routes/usersRouter');
 const seedDatabase = require('./scripts/seed');
 
 require('dotenv/config');
