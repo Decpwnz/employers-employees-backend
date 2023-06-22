@@ -4,7 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const winston = require('winston');
 
-const testsRoute = require('./routes/usersRouter');
+const usersRoute = require('./routes/usersRouter');
 const seedDatabase = require('./scripts/seed');
 
 require('dotenv/config');
@@ -13,7 +13,7 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(cors());
-app.use('/testDB', testsRoute);
+app.use('/testDB', usersRoute);
 
 const logger = winston.createLogger({
   level: 'info',
